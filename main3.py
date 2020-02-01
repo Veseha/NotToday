@@ -24,7 +24,6 @@ def ellipse_on_screen():
 
 def load_image(name, color_key=None):
     fullname = os.path.join('data', name)
-    # print(fullname)
     image = pygame.image.load(fullname).convert()
     if color_key is not None:
         if color_key == -1:
@@ -140,8 +139,8 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('empty', x, y)
-            #elif level[y][x] == '#':
-             #   Tile('wall', x, y)
+            elif level[y][x] == '#':
+                Tile('wall', x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -222,22 +221,22 @@ def generate_level(level):
     return new_player, x, y
 
 
-class Mouse(pygame.sprite.Sprite):
-    def __init__(self, group):
-        super().__init__(group)
-        self.image = load_image('arrow.png', -1)
-        self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 0
-
-    def update(self, *args):
-        if bool(pygame.mouse.get_focused()):
-            self.rect.x, self.rect.y = mousepos
-        else:
-            self.rect.x, self.rect.y = (-100, -100)
-
-    def get_event(self, *args):
-        pass
+# class Mouse(pygame.sprite.Sprite):
+#     def __init__(self, group):
+#         super().__init__(group)
+#         self.image = load_image('arrow.png', -1)
+#         self.rect = self.image.get_rect()
+#         self.rect.x = 0
+#         self.rect.y = 0
+#
+#     def update(self, *args):
+#         if bool(pygame.mouse.get_focused()):
+#             self.rect.x, self.rect.y = mousepos
+#         else:
+#             self.rect.x, self.rect.y = (-100, -100)
+#
+#     def get_event(self, *args):
+#         pass
 
 
 class Tile(pygame.sprite.Sprite):
@@ -331,6 +330,7 @@ class Kostyl(pygame.sprite.Sprite):
 
     def update(self, *args):
         global cfm
+        global playerpos
         xx, yy = 0, 0
         k = 1
         self.image = self.moving_left
@@ -346,10 +346,13 @@ class Kostyl(pygame.sprite.Sprite):
         elif vy_actual < 0:
             self.rect.y += velocity_direction_y * speed_player
             yy = -1
-
+        playerpos[0] += xx
+        playerpos[1] += yy
         if pygame.sprite.spritecollideany(self, not_passable_group):
             self.rect.x -= xx * speed_player
             self.rect.y -= yy * speed_player
+            playerpos[0] -= xx
+            playerpos[1] -= yy
 
 
 class Camera:
@@ -364,7 +367,6 @@ class Camera:
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - width // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
-        # print(self.dx, self.dy)
 
 
 def print_energy():
@@ -394,13 +396,13 @@ intro_rect_energy.x = 10
 
 init_display(1280, 720)
 cfm = 0
-speed_player = 4
+speed_player = 10
 speed_energy = MAXENERGY
 size = width, height = screen.get_size()
 clock = pygame.time.Clock()
 isinfocus = bool(pygame.mouse.get_focused())
 mousepos = (-50, -50)
-playerpos = (0, 0)
+playerpos = [0, 0]
 velocity_direction_x = 0
 velocity_direction_y = 0
 
@@ -437,7 +439,7 @@ move_ticker = 0
 check_for_change_image = [0]
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
 player, level_x, level_y = generate_level(cur_lvl)
-# mousePoint, cam = Mouse(all_sprites), Camera()
+#mousePoint, cam = Mouse(all_sprites), Camera()
 cam = Camera()
 
 preview()
@@ -461,7 +463,7 @@ try:
                         init_display(1280, 720)
                         break
                     if screen.get_width() == 1280:
-                        init_display(1281, 721)
+                        init_display(1600, 900)
 
         if check_for_change_image[0] and cfm != 0:
             velocity_direction_y = check_for_change_image[3]
@@ -495,13 +497,13 @@ try:
                     velocity_direction_y = 0
                 if keys[pygame.K_LCTRL]:
                     if speed_energy > 0:
-                        speed_player = 8
+                        speed_player = 14
                         speed_energy -= 0.5
                     else:
                         speed_energy = 0
-                        speed_player = 5
+                        speed_player = 10
                 elif speed_energy != MAXENERGY:
-                    speed_player = 5
+                    speed_player = 10
                     if speed_energy != MAXENERGY:
                         speed_energy += 0.25
 
@@ -541,15 +543,14 @@ try:
 
             all_sprites.draw(screen)
             all_sprites.update()
-            # print(all_sprites)
-
             cam.update(player)
             for sprite in all_sprites:
                 cam.apply(sprite)
             ellipse_on_screen()
             print_energy()
+            print(playerpos)
             pygame.display.flip()
-            clock.tick(60)
+            clock.tick(30)
         except Exception as a:
             print(a)
 except Exception as aa:
