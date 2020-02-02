@@ -2,7 +2,7 @@ import os
 import sys
 import random
 import pygame
-from global_varibals import STEPS, MAXENERGY, check_ellipse
+from global_varibals import STEPS, MAXENERGY, check_ellipse, deadlines
 
 
 def init_display(WIDTH, HEIGHT):  # NOT EDIT, WORKS 100%
@@ -211,12 +211,17 @@ def generate_level(level):
             elif level[y][x] == 'z':
                 Tile('walllr', x, y)
 
+            elif level[y][x] == '>':
+                Tile('wallP1', x, y)
+            elif level[y][x] == '<':
+                Tile('wallP2', x, y)
+
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-
                 fx, fy = x, y
-    new_player = Player(fx, fy)
-    return new_player, x, y
+    # new_player = Player(fx, fy)
+    # return new_player, x, y, fx, fy
+    return x, y, fx, fy
 
 #
 # class Mouse(pygame.sprite.Sprite):
@@ -349,6 +354,41 @@ class Kostyl(pygame.sprite.Sprite):
             self.rect.y -= yy * speed_player
 
 
+class Deadline(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(deadline_group, all_sprites)
+        sx, sy = 50, 5
+        self.image = load_image('deadline.png')
+        self.rect = self.image.get_rect().move(sx * x, 50 * y)
+
+    def update(self, *args):
+        if 580 < self.rect.x < 650 and 359 < self.rect.y < 397:
+            global running
+            running = False
+            fon = pygame.transform.scale(load_image('youdied' + random.choice(['1',
+                                                                               '2', '3', '4', '5',
+                                                                               '6',
+                                                                               '1', '2', '3', '4',
+                                                                               '5']) + '.png'),
+                                         (width, height))
+            screen.blit(fon, (0, 0))
+
+            pygame.display.flip()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.KEYDOWN:
+                        exit(0)
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
+
+
+    # if 580 < tiles_group.sprites()[0].rect[0] < 650 and 319 < \
+    #   tiles_group.sprites()[0].rect[1] < 397:
+
+
 class Camera:
     def __init__(self):
         self.dx = 0
@@ -417,13 +457,16 @@ tile_images = {'wall': load_image('box.png'), 'wall11': load_image('wall11.png')
                'wallrr4': load_image('wallrr4.png'), 'wallul1': load_image('wallul1.png'),
                'wallul2': load_image('wallul2.png'), 'wallur1': load_image('wallur1.png'),
                'wallur2': load_image('wallur2.png'), 'wallrl': load_image('wallrl.png'),
-               'walllr': load_image('walllr.png')}
+               'walllr': load_image('walllr.png'), 'wallP1': load_image('wallP1.png'),
+               'wallP2': load_image('wallP2.png'),
+}
 
 
 
 tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
+deadline_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 not_passable_group = pygame.sprite.Group()
 
@@ -433,9 +476,13 @@ vx_actual, vy_actual = 0, 0
 move_ticker = 0
 check_for_change_image = [0]
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
-player, level_x, level_y = generate_level(cur_lvl)
+# player, level_x, level_y = generate_level(cur_lvl)
+level_x, level_y, fx, fy = generate_level(cur_lvl)
+Deadline(4, 29)
+player = Player(fx, fy)
 # mousePoint, cam = Mouse(all_sprites), Camera()
 cam = Camera()
+
 
 preview()
 start_screen()
