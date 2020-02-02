@@ -129,7 +129,6 @@ def load_level(filename):
         level_map = [line.strip() for line in mapFile]
 
     max_width = max(map(len, level_map))
-
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
@@ -140,8 +139,6 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('empty', x, y)
-            #elif level[y][x] == '#':
-             #   Tile('wall', x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -221,23 +218,23 @@ def generate_level(level):
     new_player = Player(fx, fy)
     return new_player, x, y
 
-
-class Mouse(pygame.sprite.Sprite):
-    def __init__(self, group):
-        super().__init__(group)
-        self.image = load_image('arrow.png', -1)
-        self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 0
-
-    def update(self, *args):
-        if bool(pygame.mouse.get_focused()):
-            self.rect.x, self.rect.y = mousepos
-        else:
-            self.rect.x, self.rect.y = (-100, -100)
-
-    def get_event(self, *args):
-        pass
+#
+# class Mouse(pygame.sprite.Sprite):
+#     def __init__(self, group):
+#         super().__init__(group)
+#         self.image = load_image('arrow.png', -1)
+#         self.rect = self.image.get_rect()
+#         self.rect.x = 0
+#         self.rect.y = 0
+#
+#     def update(self, *args):
+#         if bool(pygame.mouse.get_focused()):
+#             self.rect.x, self.rect.y = mousepos
+#         else:
+#             self.rect.x, self.rect.y = (-100, -100)
+#
+#     def get_event(self, *args):
+#         pass
 
 
 class Tile(pygame.sprite.Sprite):
@@ -379,7 +376,7 @@ screen = None
 try:
     cur_lvl = load_level(r'levels/' + (str(sys.argv[1]) if len(sys.argv) > 1 or False else 'level1.lvl'))
 except Exception as e:
-    print('failed to load level.')
+    print('level not detected.')
     cur_lvl = load_level(r'levels/level1.lvl')
 
 
@@ -398,9 +395,9 @@ speed_player = 4
 speed_energy = MAXENERGY
 size = width, height = screen.get_size()
 clock = pygame.time.Clock()
-isinfocus = bool(pygame.mouse.get_focused())
-mousepos = (-50, -50)
-playerpos = (0, 0)
+# isinfocus = bool(pygame.mouse.get_focused())
+#mousepos = (-50, -50)
+# playerpos = (0, 0)
 velocity_direction_x = 0
 velocity_direction_y = 0
 
@@ -443,6 +440,13 @@ cam = Camera()
 preview()
 start_screen()
 rules()
+print(all_sprites)
+print(all_sprites.sprites())
+# for i in range(1):
+#     print(all_sprites.remove(i))
+print(all_sprites)
+
+
 pygame.display.flip()
 try:
     while running:
@@ -474,7 +478,7 @@ try:
             velocity_direction_y = 0
 
         try:
-            isinfocus = bool(pygame.mouse.get_focused())
+            #isinfocus = bool(pygame.mouse.get_focused())
             screen.fill((0, 0, 0))
             keys = pygame.key.get_pressed()
             if keys:
@@ -542,12 +546,18 @@ try:
             all_sprites.draw(screen)
             all_sprites.update()
             # print(all_sprites)
+            #if 580 < tiles_group.sprites()[0].rect[0] < 650 and 319 < \
+             #   tiles_group.sprites()[0].rect[1] < 397:
+              #  print('iam here!')
+            # print(tiles_group.sprites()[0].rect)
+
 
             cam.update(player)
             for sprite in all_sprites:
                 cam.apply(sprite)
             ellipse_on_screen()
             print_energy()
+            # print(player_group.sprites())
             pygame.display.flip()
             clock.tick(60)
         except Exception as a:
