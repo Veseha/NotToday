@@ -223,23 +223,29 @@ def generate_level(level):
     # return new_player, x, y, fx, fy
     return x, y, fx, fy
 
-#
-# class Mouse(pygame.sprite.Sprite):
-#     def __init__(self, group):
-#         super().__init__(group)
-#         self.image = load_image('arrow.png', -1)
-#         self.rect = self.image.get_rect()
-#         self.rect.x = 0
-#         self.rect.y = 0
-#
-#     def update(self, *args):
-#         if bool(pygame.mouse.get_focused()):
-#             self.rect.x, self.rect.y = mousepos
-#         else:
-#             self.rect.x, self.rect.y = (-100, -100)
-#
-#     def get_event(self, *args):
-#         pass
+
+def print_energy():
+    screen.blit(string_rendered_energy, intro_rect_energy)
+    pygame.draw.rect(screen, (0, 0, 255), (115, 15, speed_energy, 30))
+    pygame.draw.rect(screen, (255, 255, 255), (115, 15, 100, 30), 2)
+
+
+class Mouse(pygame.sprite.Sprite):
+    def __init__(self, group):
+        super().__init__(group)
+        self.image = load_image('arrow.png', -1)
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = 0
+
+    def update(self, *args):
+        if bool(pygame.mouse.get_focused()):
+            self.rect.x, self.rect.y = mousepos
+        else:
+            self.rect.x, self.rect.y = (-100, -100)
+
+    def get_event(self, *args):
+        pass
 
 
 class Tile(pygame.sprite.Sprite):
@@ -355,14 +361,19 @@ class Kostyl(pygame.sprite.Sprite):
 
 
 class Deadline(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, type, x, y):
         super().__init__(deadline_group, all_sprites)
-        sx, sy = 50, 5
-        self.image = load_image('deadline.png')
-        self.rect = self.image.get_rect().move(sx * x, 50 * y)
+        self.type = type
+        if type == 'x':
+            self.image = load_image('deadline.png')
+            self.rect = self.image.get_rect().move(50 * x, 50 * y)
+        if type == 'y':
+            self.image = load_image('deadline1.png')
+            self.rect = self.image.get_rect().move(50 * x + 25, 50 * y)
 
     def update(self, *args):
-        if 580 < self.rect.x < 650 and 359 < self.rect.y < 397:
+        if (580 < self.rect.x < 650 and 359 < self.rect.y < 397 and self.type == 'x') or \
+                (637 < self.rect.x < 643 and 343 < self.rect.y < 372 and self.type == 'y'):
             global running
             running = False
             fon = pygame.transform.scale(load_image('youdied' + random.choice(['1',
@@ -402,12 +413,6 @@ class Camera:
         self.dx = -(target.rect.x + target.rect.w // 2 - width // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
         # print(self.dx, self.dy)
-
-
-def print_energy():
-    screen.blit(string_rendered_energy, intro_rect_energy)
-    pygame.draw.rect(screen, (0, 0, 255), (115, 15, speed_energy, 30))
-    pygame.draw.rect(screen, (255, 255, 255), (115, 15, 100, 30), 2)
 
 
 screen = None
@@ -478,7 +483,8 @@ check_for_change_image = [0]
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
 # player, level_x, level_y = generate_level(cur_lvl)
 level_x, level_y, fx, fy = generate_level(cur_lvl)
-Deadline(4, 29)
+for i in deadlines:
+    Deadline(i[0], i[1], i[2])
 player = Player(fx, fy)
 # mousePoint, cam = Mouse(all_sprites), Camera()
 cam = Camera()
