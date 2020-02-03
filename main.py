@@ -2,7 +2,8 @@ import os
 import sys
 import random
 import pygame
-from global_varibals import STEPS, MAXENERGY, check_ellipse, deadlines
+from global_varibals import STEPS, MAXENERGY, check_ellipse, deadlines,\
+    text_message, check_message, image_message, fun_lever, select_lever
 
 
 def init_display(WIDTH, HEIGHT):  # NOT EDIT, WORKS 100%
@@ -139,6 +140,9 @@ def generate_level(level):
         for x in range(len(level[y])):
             if level[y][x] == '.':
                 Tile('empty', x, y)
+            elif level[y][x] == '^':
+                # Tile('empty', x, y)
+                Lever(x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -214,20 +218,28 @@ def generate_level(level):
             elif level[y][x] == '>':
                 Tile('wallP1', x, y)
             elif level[y][x] == '<':
+                Message(x, y)
                 Tile('wallP2', x, y)
+
 
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 fx, fy = x, y
     # new_player = Player(fx, fy)
     # return new_player, x, y, fx, fy
-    return x, y, fx, fy
+    return x, y, fx, fy #
 
 
 def print_energy():
     screen.blit(string_rendered_energy, intro_rect_energy)
     pygame.draw.rect(screen, (0, 0, 255), (115, 15, speed_energy, 30))
     pygame.draw.rect(screen, (255, 255, 255), (115, 15, 100, 30), 2)
+
+
+def print_time(sec):
+    string_rendered_time = font_energy.render('Time left: ' + str(sec // 60) +
+                                              ':' + str(sec % 60), 3, pygame.Color('white'))
+    screen.blit(string_rendered_time, (10, 60, 17, 35))
 
 
 class Mouse(pygame.sprite.Sprite):
@@ -361,9 +373,10 @@ class Kostyl(pygame.sprite.Sprite):
 
 
 class Deadline(pygame.sprite.Sprite):
-    def __init__(self, type, x, y):
+    def __init__(self, type, x, y, num):
         super().__init__(deadline_group, all_sprites)
         self.type = type
+        self.num = (x, y)
         if type == 'x':
             self.image = load_image('deadline.png')
             self.rect = self.image.get_rect().move(50 * x, 50 * y)
@@ -395,9 +408,63 @@ class Deadline(pygame.sprite.Sprite):
                 screen.blit(fon, (0, 0))
                 clock.tick(15)
 
+    def suicide(self):
+        self.kill()
 
     # if 580 < tiles_group.sprites()[0].rect[0] < 650 and 319 < \
     #   tiles_group.sprites()[0].rect[1] < 397:
+
+
+class Message(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(message_group, all_sprites)
+        self.image = load_image('box.png', -1)
+        self.rect = self.image.get_rect().move(50 * x + 50, 50 * y)
+
+    def update(self, *args):
+        global check_message
+        if check_message:
+            if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_message:
+                fon = pygame.transform.scale(load_image(image_message), (width, height))
+                check = True
+                while check:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            terminate()
+                        elif event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_F11:  # F - full screen
+                                if screen.get_width() > 1280:
+                                    init_display(1280, 720)
+                                    break
+                                if screen.get_width() == 1280:
+                                    init_display(1281, 721)
+                            else:
+                                check = False
+                    pygame.display.flip()
+                    screen.blit(fon, (0, 0))
+                    clock.tick(15)
+            else:
+                check_message = False
+
+
+class Lever(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(lever_group, all_sprites)
+        self.image = load_image('lever11.png', -1)
+        self.rect = self.image.get_rect().move(50 * x, 50 * y)
+
+    def update(self, *args):
+        global check_message, deadlines, select_lever
+
+        if check_message:
+            if 590 < self.rect.x < 740 and 283 < self.rect.y < 433:
+                self.image = load_image('lever22.png', -1)
+                for i in range(len(deadline_group.sprites()) - 1):
+                    for j in select_lever:
+                        if deadline_group.sprites()[i].num == j:
+                            deadline_group.sprites()[i].suicide()
+            else:
+                check_message = False
 
 
 class Camera:
@@ -431,6 +498,7 @@ running = True
 font_energy = pygame.font.Font('C:\Windows\Fonts\Arial.ttf', 30)
 string_rendered_energy = font_energy.render('Energy', 1, pygame.Color('white'))
 intro_rect_energy = string_rendered_energy.get_rect()
+
 intro_rect_energy.top = 10
 intro_rect_energy.x = 10
 
@@ -472,7 +540,9 @@ tile_width = tile_height = 50
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 deadline_group = pygame.sprite.Group()
+message_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+lever_group = pygame.sprite.Group()
 not_passable_group = pygame.sprite.Group()
 
 image_player_global = None
@@ -481,28 +551,21 @@ vx_actual, vy_actual = 0, 0
 move_ticker = 0
 check_for_change_image = [0]
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
-# player, level_x, level_y = generate_level(cur_lvl)
 level_x, level_y, fx, fy = generate_level(cur_lvl)
-for i in deadlines:
-    Deadline(i[0], i[1], i[2])
+for j in range(len(deadlines)):
+    i = deadlines[j]
+    Deadline(i[0], i[1], i[2], j)
 player = Player(fx, fy)
-# mousePoint, cam = Mouse(all_sprites), Camera()
 cam = Camera()
-
-
 preview()
 start_screen()
 rules()
-print(all_sprites)
-print(all_sprites.sprites())
-# for i in range(1):
-#     print(all_sprites.remove(i))
-print(all_sprites)
-
+start_ticks = pygame.time.get_ticks()
 
 pygame.display.flip()
 try:
     while running:
+        seconds = (pygame.time.get_ticks() - start_ticks) // 1000
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -519,6 +582,15 @@ try:
                         break
                     if screen.get_width() == 1280:
                         init_display(1281, 721)
+                if event.key == pygame.K_e:
+                    for i in range(len(message_group.sprites())):
+                        image_message = text_message[i]
+                        check_message = True
+                        message_group.sprites()[i].update()
+                    for i in range(len(lever_group.sprites())):
+                        select_lever = fun_lever[i]
+                        check_message = True
+                        lever_group.sprites()[i].update()
 
         if check_for_change_image[0] and cfm != 0:
             velocity_direction_y = check_for_change_image[3]
@@ -531,7 +603,6 @@ try:
             velocity_direction_y = 0
 
         try:
-            #isinfocus = bool(pygame.mouse.get_focused())
             screen.fill((0, 0, 0))
             keys = pygame.key.get_pressed()
             if keys:
@@ -561,7 +632,6 @@ try:
                     speed_player = 5
                     if speed_energy != MAXENERGY:
                         speed_energy += 0.25
-
             if velocity_direction_x != 0 or vx_actual != 0:
                 vy_actual = 0
                 if vx_actual in [STEPS, -STEPS]:
@@ -598,19 +668,21 @@ try:
 
             all_sprites.draw(screen)
             all_sprites.update()
-            # print(all_sprites)
-            #if 580 < tiles_group.sprites()[0].rect[0] < 650 and 319 < \
-             #   tiles_group.sprites()[0].rect[1] < 397:
-              #  print('iam here!')
-            # print(tiles_group.sprites()[0].rect)
 
+            # print(all_sprites)
+            # if 580 < tiles_group.sprites()[0].rect[0] < 650 and 319 < \
+            #   tiles_group.sprites()[0].rect[1] < 397:
+            #  print('iam here!')
+            # print(tiles_group.sprites()[0].rect)
 
             cam.update(player)
             for sprite in all_sprites:
                 cam.apply(sprite)
+
             ellipse_on_screen()
             print_energy()
-            # print(player_group.sprites())
+            print_time(300 - seconds)
+
             pygame.display.flip()
             clock.tick(60)
         except Exception as a:
