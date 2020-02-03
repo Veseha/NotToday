@@ -242,6 +242,29 @@ def print_time(sec):
     screen.blit(string_rendered_time, (10, 60, 17, 35))
 
 
+def died():
+    global running
+    running = False
+    fon = pygame.transform.scale(load_image('youdied' + random.choice(['1',
+                                                                       '2', '3', '4', '5',
+                                                                       '6',
+                                                                       '1', '2', '3', '4',
+                                                                       '5']) + '.png'),
+                                 (width, height))
+    screen.blit(fon, (0, 0))
+
+    pygame.display.flip()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                exit(0)
+        pygame.display.flip()
+        screen.blit(fon, (0, 0))
+        clock.tick(15)
+
+
 class Mouse(pygame.sprite.Sprite):
     def __init__(self, group):
         super().__init__(group)
@@ -400,9 +423,9 @@ class Deadline(pygame.sprite.Sprite):
             pygame.display.flip()
             while True:
                 for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
+                   if event.type == pygame.QUIT:
                         terminate()
-                    elif event.type == pygame.KEYDOWN:
+                   elif event.type == pygame.KEYDOWN:
                         exit(0)
                 pygame.display.flip()
                 screen.blit(fon, (0, 0))
@@ -566,7 +589,8 @@ pygame.display.flip()
 try:
     while running:
         seconds = (pygame.time.get_ticks() - start_ticks) // 1000
-
+        if seconds >= 300:
+            died()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
