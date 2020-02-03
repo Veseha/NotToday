@@ -143,6 +143,8 @@ def generate_level(level):
             elif level[y][x] == '^':
                 # Tile('empty', x, y)
                 Lever(x, y)
+            elif level[y][x] == '+':
+                Lava(x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -438,6 +440,31 @@ class Deadline(pygame.sprite.Sprite):
     #   tiles_group.sprites()[0].rect[1] < 397:
 
 
+class Lava(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(lava_group, all_sprites)
+        self.image = load_image('lava.png')
+        self.rect = self.image.get_rect().move(50 * x, 50 * y)
+
+    def update(self, *args):
+        if 577 < self.rect.x < 653 and 324 < self.rect.y < 397:
+            global running
+            running = False
+            fon = pygame.transform.scale(load_image('deadlava.png'), (width, height))
+            screen.blit(fon, (0, 0))
+
+            pygame.display.flip()
+            while True:
+                for event in pygame.event.get():
+                   if event.type == pygame.QUIT:
+                        terminate()
+                   elif event.type == pygame.KEYDOWN:
+                        exit(0)
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
+
+
 class Message(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(message_group, all_sprites)
@@ -482,10 +509,17 @@ class Lever(pygame.sprite.Sprite):
         if check_message:
             if 590 < self.rect.x < 740 and 283 < self.rect.y < 433:
                 self.image = load_image('lever22.png', -1)
-                for i in range(len(deadline_group.sprites()) - 1):
-                    for j in select_lever:
-                        if deadline_group.sprites()[i].num == j:
+                for j in select_lever:
+                    # chk = 0
+                    for i in range(len(deadline_group.sprites()) - 1):
+                        if deadline_group.sprites()[i].num == (j[1], j[2]):
                             deadline_group.sprites()[i].suicide()
+                            # print('deadline delete')
+                            # chk = 1
+                    # if chk == 0:
+                      #  print('deadline created')
+                       # Deadline(j[0], j[1], j[2], 'lol') this is not working, don't use it
+
             else:
                 check_message = False
 
@@ -566,6 +600,7 @@ deadline_group = pygame.sprite.Group()
 message_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 lever_group = pygame.sprite.Group()
+lava_group = pygame.sprite.Group()
 not_passable_group = pygame.sprite.Group()
 
 image_player_global = None
