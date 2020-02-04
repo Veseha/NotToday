@@ -151,6 +151,11 @@ def generate_level(level):
                 Pc2(x, y)
             elif level[y][x] == '$':
                 Button(x, y)
+            elif level[y][x] == 'A':
+                Door(x, y)
+                Tile('door2', x, y)
+            elif level[y][x] == 'B':
+                Tile('door1', x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -160,6 +165,7 @@ def generate_level(level):
                 Tile('wall43', x, y)
             elif level[y][x] == 'd':
                 Tile('wall44', x, y)
+
 
             elif level[y][x] == 'e':  # Верхний правый угол
                 Tile('wall31', x, y)
@@ -298,6 +304,8 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(tiles_group, all_sprites)
         if tile_type == 'wallll3' or tile_type == 'wallrr1':
             None
+        # elif tile_type == 'door1':
+         #   self.image = load_image('door1')
         elif tile_type[:4] == 'wall' and (tile_type != 'wallll3' or tile_type != 'wallrr1'):
             self.add(not_passable_group)
         if tile_type == 'empty':
@@ -700,12 +708,14 @@ class MessageEnd(pygame.sprite.Sprite):
 
     def update(self, *args):
         global check_message
+        global check_orc
+
+        aaa = False
         if check_message:
             if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_message:
                 fon = pygame.transform.scale(load_image(image_message[self.type]), (width, height))
                 check = True
                 while check:
-
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             terminate()
@@ -721,12 +731,17 @@ class MessageEnd(pygame.sprite.Sprite):
                                     for i in range(len(deadline_group.sprites()) - 1):
                                         if deadline_group.sprites()[i].num == (j[1], j[2]):
                                             deadline_group.sprites()[i].suicide()
+                                for j in fun_lever[4]:
+                                    for i in range(len(deadline_group.sprites()) - 1):
+                                        if deadline_group.sprites()[i].num == (j[1], j[2]):
+                                            deadline_group.sprites()[i].suicide()
                                 corr = [all_sprites.sprites()[0].rect[0], all_sprites.sprites()[0].rect[1]]
                                 corrx = (950 - corr[0]) / 50
                                 corry = (0 - corr[1]) / 50
                                 for i in [['y', 11, 15], ['y', 13, 11], ['y', 13, 18], ['x', 12, 6], ['x', 14, 23]]:
                                     Deadline(i[0], i[1] - corrx, i[2] - corry, 0)
-                                Orc(34, 4)
+                                # Orc(34, 4)
+                                aaa = True
                                 print(deadline_group.sprites()[-1].rect)
                                 check = False
 
@@ -735,11 +750,42 @@ class MessageEnd(pygame.sprite.Sprite):
                     clock.tick(15)
             else:
                 check_message = False
+        if aaa:
+            check_orc = True
+
+
+class Door(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(message_group, all_sprites)
+        self.image = load_image('door2.png')
+        self.rect = self.image.get_rect().move(50 * x + 50, 50 * y)
+        # print(self.type)
+
+    def update(self, *args):
+        if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_message:
+            fon = pygame.transform.scale(load_image('win.png'), (width, height))
+            check = True
+            while check:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F11:  # F - full screen
+                            if screen.get_width() > 1280:
+                                init_display(1280, 720)
+                                break
+                            if screen.get_width() == 1280:
+                                init_display(1281, 721)
+                        else:
+                            check = False
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
 
 
 class Orc(pygame.sprite.Sprite):
     def __init__(self, x, y):
-        super().__init__(all_sprites)
+        super().__init__(orc_group, all_sprites)
         sx, sy = 70, 70
         self.moving_left = pygame.transform.scale(load_image(r'player\walking_left\orc.png', -1), (sx, sy))
         self.moving_right = pygame.transform.scale(load_image(r'player\walking_right\orc.png', -1), (sx, sy))
@@ -750,32 +796,41 @@ class Orc(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = x * 50 - 18, y * 50 - 46
 
     def update(self, *args):
-        global cfm
-        if vy_actual < 0:
-            if cfm % 1 == 0:
-                self.image = self.walking_up[int(cfm)]
+        self.image = self.walking_down
+        if self.rect.x < 601:
+            self.rect.x += 2
+        else:
+            self.rect.x -= 2
+        if self.rect.y < 344:
+            self.rect.y += 2
+        else:
+            self.rect.y -= 2
+        if 590 < self.rect.x < 740 and 283 < self.rect.y < 433:
+            global running
+            running = False
+            fon = pygame.transform.scale(load_image('scrimer.png'),(width, height))
+            screen.blit(fon, (0, 0))
+            checing = True
 
-        if vy_actual > 0:
-            if cfm % 1 == 0:
-                self.image = self.walking_down[int(cfm)]
-
-        if vx_actual < 0:
-            if cfm % 1 == 0:
-                self.image = self.moving_left[int(cfm)]
-
-        if vx_actual > 0:
-            if cfm % 1 == 0:
-                self.image = self.moving_right[int(cfm)]
-        self.rect.x = self.kost.rect.x - 18
-        self.rect.y = self.kost.rect.y - 46
-
-        # collide = False
-        # for i in not_passable_group:
-        #     if pygame.sprite.collide_mask(i, self):
-        #         collide = True
-        # if collide:
-        #     self.rect.x = self.kost.rect.x - 18
-        #     self.rect.y = self.kost.rect.y - 46
+            pygame.display.flip()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.KEYDOWN:
+                        if checing:
+                            fon = pygame.transform.scale(load_image('youdied' + random.choice(['1',
+                                                                                               '2', '3', '4', '5',
+                                                                                               '6',
+                                                                                               '1', '2', '3', '4',
+                                                                                               '5']) + '.png'),
+                                                         (width, height))
+                            checing = False
+                        else:
+                            terminate()
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
 
 
 class Camera:
@@ -842,7 +897,8 @@ tile_images = {'wall': load_image('box.png'), 'wall11': load_image('wall11.png')
                'wallul2': load_image('wallul2.png'), 'wallur1': load_image('wallur1.png'),
                'wallur2': load_image('wallur2.png'), 'wallrl': load_image('wallrl.png'),
                'walllr': load_image('walllr.png'), 'wallP1': load_image('wallP1.png'),
-               'wallP2': load_image('wallP2.png'),
+               'wallP2': load_image('wallP2.png'), 'door1': load_image('door1.png'),
+                'door2': load_image('door2.png')
 }
 
 
@@ -857,11 +913,14 @@ lever_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
 pc_group = pygame.sprite.Group()
 not_passable_group = pygame.sprite.Group()
+orc_group = pygame.sprite.Group()
 
 image_player_global = None
 screen.fill((0, 0, 0))
 vx_actual, vy_actual = 0, 0
 move_ticker = 0
+check_orc = False
+check_orc_1 = False
 check_for_change_image = [0]
 pygame.mouse.set_cursor((8, 8), (0, 0), (0, 0, 0, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0, 0))
 level_x, level_y, fx, fy = generate_level(cur_lvl)
@@ -881,10 +940,22 @@ start_ticks = pygame.time.get_ticks()
 pygame.display.flip()
 try:
     while running:
+        if check_orc:
+            pygame.time.set_timer(pygame.USEREVENT + 1, 3000)
+
         seconds = (pygame.time.get_ticks() - start_ticks) // 1000
         if seconds >= 300:
             died()
+        if check_orc_1:
+            print('here')
+            orc_group.update()
         for event in pygame.event.get():
+            if check_orc:
+                print()
+                check_orc = False
+                check_orc_1 = True
+                Orc(-39, 10)
+                orc_group.update()
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEMOTION:
