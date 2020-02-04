@@ -847,7 +847,6 @@ class Camera:
         self.dy = -(target.rect.y + target.rect.h // 2 - height // 2)
         # print(self.dx, self.dy)
 
-
 screen = None
 
 
