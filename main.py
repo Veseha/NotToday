@@ -3,7 +3,7 @@ import sys
 import random
 import pygame
 from global_varibals import STEPS, MAXENERGY, check_ellipse, deadlines,\
-    text_message, check_message, image_message, fun_lever, select_lever
+    text_message, check_message, image_message, fun_lever, select_lever, check_pc
 
 
 def init_display(WIDTH, HEIGHT):  # NOT EDIT, WORKS 100%
@@ -145,6 +145,12 @@ def generate_level(level):
                 Lever(x, y)
             elif level[y][x] == '+':
                 Lava(x, y)
+            elif level[y][x] == '!':
+                Pc(x, y)
+            elif level[y][x] == '?':
+                Pc2(x, y)
+            elif level[y][x] == '$':
+                Button(x, y)
 
             elif level[y][x] == 'a':   # Верхний Левый угол
                 Tile('wall41', x, y)
@@ -222,13 +228,15 @@ def generate_level(level):
             elif level[y][x] == '<':
                 Message(x, y)
                 Tile('wallP2', x, y)
-
+            elif level[y][x] == '&':
+                Tile('wallP1', x, y)
+            elif level[y][x] == '~':
+                MessageEnd(x, y)
+                Tile('wallP2', x, y)
 
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 fx, fy = x, y
-    # new_player = Player(fx, fy)
-    # return new_player, x, y, fx, fy
     return x, y, fx, fy #
 
 
@@ -468,14 +476,16 @@ class Lava(pygame.sprite.Sprite):
 class Message(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(message_group, all_sprites)
+        self.type = (x, y)
         self.image = load_image('box.png', -1)
         self.rect = self.image.get_rect().move(50 * x + 50, 50 * y)
+        # print(self.type)
 
     def update(self, *args):
         global check_message
         if check_message:
             if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_message:
-                fon = pygame.transform.scale(load_image(image_message), (width, height))
+                fon = pygame.transform.scale(load_image(image_message[self.type]), (width, height))
                 check = True
                 while check:
                     for event in pygame.event.get():
@@ -508,20 +518,264 @@ class Lever(pygame.sprite.Sprite):
 
         if check_message:
             if 590 < self.rect.x < 740 and 283 < self.rect.y < 433:
+                if select_lever == [('x', 12, 13)]:
+                    select_lever = [('y', 29, 27)]
                 self.image = load_image('lever22.png', -1)
                 for j in select_lever:
                     # chk = 0
                     for i in range(len(deadline_group.sprites()) - 1):
                         if deadline_group.sprites()[i].num == (j[1], j[2]):
                             deadline_group.sprites()[i].suicide()
-                            # print('deadline delete')
-                            # chk = 1
-                    # if chk == 0:
-                      #  print('deadline created')
-                       # Deadline(j[0], j[1], j[2], 'lol') this is not working, don't use it
-
             else:
                 check_message = False
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(tiles_group, all_sprites)
+        self.image = load_image('button.png')
+        self.rect = self.image.get_rect().move(50 * x, 50 * y)
+        self.cheker = True
+
+    def update(self, *args):
+        global check_message, select_lever
+        if self.cheker:
+            if 590 < self.rect.x < 740 and 283 < self.rect.y < 433:
+                self.image = load_image('button1.png')
+                for j in fun_lever[2]:
+                    for i in range(len(deadline_group.sprites())):
+                        if deadline_group.sprites()[i].num == (j[1], j[2]):
+                            deadline_group.sprites()[i].suicide()
+                self.cheker = False
+
+
+class Pc(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(pc_group, all_sprites)
+        self.image = load_image('pc0.png', -1)
+        self.rect = self.image.get_rect().move(50 * x, 50 * y)
+        self.add(not_passable_group)
+        self.pov = 0
+        self.num = 0
+
+    def update(self, *args):
+        global check_pc, running
+
+        if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_pc:
+            check = True
+            self.num += 1
+            if self.pov == 0 and self.num <= 3:
+                fon = pygame.transform.scale(load_image('pccast1.png'), (width, height))
+            elif self.pov == 2 and self.num <= 3:
+                fon = pygame.transform.scale(load_image('pccast3.png'), (width, height))
+            elif self.num > 3:
+                fon = pygame.transform.scale(load_image('pccastE.png'), (width, height))
+                self.image = load_image('pc3.png', -1)
+                chkr = True
+                while chkr:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            terminate()
+                        elif event.type == pygame.KEYDOWN:
+                                if self.pov == 2:
+                                    fon = pygame.transform.scale(load_image('fatalerror.png'), (width, height))
+                                    self.pov = 3
+                                elif self.pov == 3:
+                                    running = False
+                                    terminate()
+                                    return
+                    pygame.display.flip()
+                    screen.blit(fon, (0, 0))
+                    clock.tick(15)
+
+            while check:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_F11:  # F - full screen
+                            if screen.get_width() > 1280:
+                                init_display(1280, 720)
+                                break
+                            if screen.get_width() == 1280:
+                                init_display(1281, 721)
+                        else:
+                            if self.pov == 0:
+                                fon = pygame.transform.scale(load_image('pccast2.png'), (width, height))
+                                self.pov = 1
+                            elif self.pov == 1:
+                                fon = pygame.transform.scale(load_image('pccast3.png'), (width, height))
+                                self.pov = 2
+                            elif self.pov == 2:
+                                check = False
+                                check_pc = False
+                                self.image = load_image('pc1.png', -1)
+
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
+        else:
+            check_pc = False
+
+
+class Pc2(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(pc_group, all_sprites)
+        self.image = load_image('pc0.png', -1)
+        self.rect = self.image.get_rect().move(50 * x, 50 * y)
+        self.add(not_passable_group)
+        self.aaa = True
+
+    def update(self, *args):
+        global check_pc
+        if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_pc and self.aaa:
+            check = True
+            red = False
+            ans = []
+            fon = pygame.transform.scale(load_image('pcin.png'), (width, height))
+
+            while check:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.KEYDOWN:
+                        if red:
+                            fon = pygame.transform.scale(load_image('pcin.png'), (width, height))
+                            red = False
+                        if event.key == pygame.K_F11:  # F - full screen
+                            if screen.get_width() > 1280:
+                                init_display(1280, 720)
+                                break
+                            if screen.get_width() == 1280:
+                                init_display(1281, 721)
+                        elif event.key == pygame.K_SPACE:
+                            return
+                        elif event.key == pygame.K_1:
+                            ans.append(1)
+                        elif event.key == pygame.K_2:
+                            ans.append(2)
+                        elif event.key == pygame.K_7:
+                            ans.append(7)
+                        elif event.key == pygame.K_8:
+                            ans.append(8)
+                        else:
+                            ans.append(0)
+                if len(ans) >= 4:
+                    if ans == [1, 7, 2, 8]:
+                        fon = pygame.transform.scale(load_image('pcG.png'), (width, height))
+                        pygame.display.flip()
+                        screen.blit(fon, (0, 0))
+                        w = True
+                        self.aaa = False
+                        self.image = load_image('pc3.png', -1)
+                        for j in fun_lever[1]:
+                            for i in range(len(deadline_group.sprites())):
+                                if deadline_group.sprites()[i].num == (j[1], j[2]):
+                                    deadline_group.sprites()[i].suicide()
+                        while w:
+                            for event in pygame.event.get():
+                                if event.type == pygame.QUIT:
+                                    terminate()
+                                elif event.type == pygame.KEYDOWN:
+                                    w = False
+                                    check = False
+                            clock.tick(15)
+                    else:
+                        fon = pygame.transform.scale(load_image('pcR.png'), (width, height))
+                        red = True
+                pygame.display.flip()
+                screen.blit(fon, (0, 0))
+                clock.tick(15)
+        else:
+            check_pc = False
+
+
+class MessageEnd(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(message_group, all_sprites)
+        self.type = (x, y)
+        # print(self.type)
+        self.image = load_image('box.png', -1)
+        self.rect = self.image.get_rect().move(50 * x + 50, 50 * y)
+
+    def update(self, *args):
+        global check_message
+        if check_message:
+            if 590 < self.rect.x < 740 and 283 < self.rect.y < 433 and check_message:
+                fon = pygame.transform.scale(load_image(image_message[self.type]), (width, height))
+                check = True
+                while check:
+
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            terminate()
+                        elif event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_F11:  # F - full screen
+                                if screen.get_width() > 1280:
+                                    init_display(1280, 720)
+                                    break
+                                if screen.get_width() == 1280:
+                                    init_display(1281, 721)
+                            else:
+                                for j in fun_lever[3]:
+                                    for i in range(len(deadline_group.sprites()) - 1):
+                                        if deadline_group.sprites()[i].num == (j[1], j[2]):
+                                            deadline_group.sprites()[i].suicide()
+                                corr = [all_sprites.sprites()[0].rect[0], all_sprites.sprites()[0].rect[1]]
+                                corrx = (950 - corr[0]) / 50
+                                corry = (0 - corr[1]) / 50
+                                for i in [['y', 11, 15], ['y', 13, 11], ['y', 13, 18], ['x', 12, 6], ['x', 14, 23]]:
+                                    Deadline(i[0], i[1] - corrx, i[2] - corry, 0)
+                                Orc(34, 4)
+                                print(deadline_group.sprites()[-1].rect)
+                                check = False
+
+                    pygame.display.flip()
+                    screen.blit(fon, (0, 0))
+                    clock.tick(15)
+            else:
+                check_message = False
+
+
+class Orc(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__(all_sprites)
+        sx, sy = 70, 70
+        self.moving_left = pygame.transform.scale(load_image(r'player\walking_left\orc.png', -1), (sx, sy))
+        self.moving_right = pygame.transform.scale(load_image(r'player\walking_right\orc.png', -1), (sx, sy))
+        self.walking_up = pygame.transform.scale(load_image(r'player\walking_up\orc.png', -1), (sx, sy))
+        self.walking_down = pygame.transform.scale(load_image(r'player\walking_down\orc.png', -1), (sx, sy))
+        self.image = self.walking_down
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = x * 50 - 18, y * 50 - 46
+
+    def update(self, *args):
+        global cfm
+        if vy_actual < 0:
+            if cfm % 1 == 0:
+                self.image = self.walking_up[int(cfm)]
+
+        if vy_actual > 0:
+            if cfm % 1 == 0:
+                self.image = self.walking_down[int(cfm)]
+
+        if vx_actual < 0:
+            if cfm % 1 == 0:
+                self.image = self.moving_left[int(cfm)]
+
+        if vx_actual > 0:
+            if cfm % 1 == 0:
+                self.image = self.moving_right[int(cfm)]
+        self.rect.x = self.kost.rect.x - 18
+        self.rect.y = self.kost.rect.y - 46
+
+        # collide = False
+        # for i in not_passable_group:
+        #     if pygame.sprite.collide_mask(i, self):
+        #         collide = True
+        # if collide:
+        #     self.rect.x = self.kost.rect.x - 18
+        #     self.rect.y = self.kost.rect.y - 46
 
 
 class Camera:
@@ -601,6 +855,7 @@ message_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 lever_group = pygame.sprite.Group()
 lava_group = pygame.sprite.Group()
+pc_group = pygame.sprite.Group()
 not_passable_group = pygame.sprite.Group()
 
 image_player_global = None
@@ -614,11 +869,14 @@ for j in range(len(deadlines)):
     i = deadlines[j]
     Deadline(i[0], i[1], i[2], j)
 player = Player(fx, fy)
+# print(all_sprites.sprites()[0].rect)
 cam = Camera()
 preview()
 start_screen()
 rules()
 start_ticks = pygame.time.get_ticks()
+# print(all_sprites.sprites()[0].rect)
+
 
 pygame.display.flip()
 try:
@@ -643,13 +901,16 @@ try:
                         init_display(1281, 721)
                 if event.key == pygame.K_e:
                     for i in range(len(message_group.sprites())):
-                        image_message = text_message[i]
+                        # image_message = text_message[i]
                         check_message = True
                         message_group.sprites()[i].update()
                     for i in range(len(lever_group.sprites())):
                         select_lever = fun_lever[i]
                         check_message = True
                         lever_group.sprites()[i].update()
+                    for i in range(len(pc_group.sprites())):
+                        check_pc = True
+                        pc_group.sprites()[i].update()
 
         if check_for_change_image[0] and cfm != 0:
             velocity_direction_y = check_for_change_image[3]
